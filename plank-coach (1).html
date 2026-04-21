@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#070a0f">
+  <title>PlankCoach AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&family=Barlow+Condensed:ital,wght@0,300;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:       #070a0f;
+      --surface:  #0d1219;
+      --card:     #111820;
+      --green:    #00ff88;
+      --red:      #ff3355;
+      --yellow:   #ffcc00;
+      --blue:     #00bbff;
+      --text:     #d4e8d4;
+      --muted:    #3a4a3a;
+      --border:   #162016;
+      --glow-g:   rgba(0,255,136,0.18);
+      --glow-r:   rgba(255,51,85,0.18);
+    }
+
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    html, body {
+      width:100%; height:100%;
+      background:var(--bg);
+      color:var(--text);
+      font-family:'JetBrains Mono', monospace;
+      overflow:hidden;
+      -webkit-tap-highlight-color:transparent;
+      touch-action:manipulation;
+      user-select:none;
+    }
+
+    /* ───────── PERMISSION SCREEN ───────── */
+    #perm-screen {
+      position:fixed; inset:0; z-index:100;
+      background:var(--bg);
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      padding:32px 28px;
+      gap:0;
+    }
+    #perm-screen .logo {
+      font-family:'Bebas Neue', sans-serif;
+      font-size:52px; letter-spacing:6px;
+      color:var(--green);
+      text-shadow: 0 0 30px var(--green), 0 0 60px rgba(0,255,136,0.3);
+      line-height:1;
+      margin-bottom:4px;
+    }
+    #perm-screen .tagline {
+      font-family:'Barlow Condensed', sans-serif;
+      font-size:13px; letter-spacing:3px;
+      color:var(--muted); text-transform:uppercase;
+      margin-bottom:40px;
+    }
+    .perm-card {
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:24px 20px;
+      width:100%;
+      margin-bottom:16px;
+    }
+    .perm-card h3 {
+      font-family:'Barlow Condensed', sans-serif;
+      font-size:13px; letter-spacing:3px; text-transform:uppercase;
+      color:var(--green); margin-bottom:14px;
+    }
+    .perm-row {
+      display:flex; align-items:flex-start; gap:14px;
+      margin-bottom:12px;
+    }
+    .perm-row:last-child { margin-bottom:0; }
+    .perm-icon {
+      font-size:20px; line-height:1.4; flex-shrink:0;
+    }
+    .perm-text {
+      font-size:12px; line-height:1.6; color:#8a9a8a;
+      font-family:'Barlow Condensed', sans-serif;
+      font-weight:400; letter-spacing:0.3px;
+    }
+    .perm-text strong { color:var(--text); font-weight:600; }
+
+    .tip-card {
+      background: linear-gradient(135deg, rgba(0,255,136,0.05), transparent);
+      border:1px solid rgba(0,255,136,0.15);
+      border-radius:16px;
+      padding:18px 20px;
+      width:100%;
+      margin-bottom:32px;
+    }
+    .tip-card h3 {
+      font-family:'Barlow Condensed', sans-serif;
+      font-size:12px; letter-spacing:3px; text-transform:uppercase;
+      color:var(--yellow); margin-bottom:10px;
+    }
+    .tip-diagram {
+      font-family:'JetBrains Mono', monospace;
+      font-size:10px; color:#5a6a5a;
+      line-height:1.8;
+    }
+    .tip-diagram span { color:var(--green); }
+
+    .start-btn {
+      width:100%;
+      background:var(--green);
+      color:#000;
+      border:none; outline:none;
+      border-radius:14px;
+      padding:18px;
+      font-family:'Bebas Neue', sans-serif;
+      font-size:24px; letter-spacing:4px;
+      cursor:pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 0 30px rgba(0,255,136,0.4);
+    }
+    .start-btn:active { transform:scale(0.97); }
+
+    /* ───────── LOADING SCREEN ───────── */
+    #load-screen {
+      position:fixed; inset:0; z-index:99;
+      background:var(--bg);
+      display:none; flex-direction:column;
+      align-items:center; justify-content:center;
+      gap:20px;
+    }
+    .load-logo {
+      font-family:'Bebas Neue', sans-serif;
+      font-size:40px; letter-spacing:6px;
+      color:var(--green);
+      text-shadow: 0 0 20px var(--green);
+    }
+    .load-bar-track {
+      width:200px; height:3px;
+      background:var(--border); border-radius:2px;
+      overflow:hidden;
+    }
+    .load-bar-fill {
+      height:100%; width:0%;
+      background:var(--green);
+      border-radius:2px;
+      transition:width 0.3s;
+      box-shadow: 0 0 8px var(--green);
+    }
+    .load-text {
+      font-size:11px; letter-spacing:2px;
+      color:var(--muted); text-transform:uppercase;
+      font-family:'Barlow Condensed';
+    }
+
+    /* ───────── MAIN APP ───────── */
+    #app {
+      display:none; flex-direction:column;
+      width:100%; height:100%;
+      position:fixed; inset:0;
+    }
+
+    /* Header */
+    #header {
+      flex-shrink:0;
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 16px 8px;
+      background:linear-gradient(to bottom, rgba(7,10,15,0.95), transparent);
+      position:absolute; top:0; left:0; right:0; z-index:10;
+    }
+    .hdr-logo {
+      font-family:'Bebas Neue'; font-size:22px; letter-spacing:3px;
+      color:var(--green);
+      text-shadow: 0 0 12px var(--green);
+    }
+    .hdr-timer {
+      font-family:'Bebas Neue'; font-size:28px; letter-spacing:2px;
+      color:var(--text);
+    }
+    .hdr-timer.active { color:var(--green); text-shadow: 0 0 10px var(--green); }
+    .hdr-score {
+      font-size:11px; letter-spacing:1px;
+      color:var(--muted); text-align:right;
+      font-family:'Barlow Condensed'; line-height:1.4;
+    }
+    .hdr-score span { color:var(--text); font-weight:600; }
+
+    /* Camera area */
+    #cam-wrap {
+      flex:1; position:relative; overflow:hidden;
+      background:#000;
+    }
+    #video {
+      width:100%; height:100%;
+      object-fit:cover;
+      transform:scaleX(-1); /* mirror for front cam */
+    }
+    #video.rear { transform:none; }
+    #overlay {
+      position:absolute; inset:0;
+      width:100%; height:100%;
+      pointer-events:none;
+    }
+
+    /* Scanline texture */
+    #cam-wrap::after {
+      content:'';
+      position:absolute; inset:0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.06) 2px,
+        rgba(0,0,0,0.06) 4px
+      );
+      pointer-events:none; z-index:5;
+    }
+
+    /* Center reticle when no pose */
+    #reticle {
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      width:180px; height:180px;
+      pointer-events:none; z-index:6;
+      opacity:0.3;
+    }
+    #reticle::before, #reticle::after {
+      content:''; position:absolute;
+      border:1px solid var(--green);
+    }
+    #reticle::before {
+      top:0; left:0; right:0; bottom:0;
+      border-radius:50%;
+    }
+    #reticle::after {
+      top:20px; left:20px; right:20px; bottom:20px;
+      border-radius:50%;
+    }
+
+    /* Bottom panel */
+    #bottom {
+      flex-shrink:0;
+      background:linear-gradient(to top, rgba(7,10,15,0.98) 80%, transparent);
+      position:absolute; bottom:0; left:0; right:0; z-index:10;
+      padding:0 16px 24px;
+      padding-bottom:max(24px, env(safe-area-inset-bottom));
+    }
+
+    /* Status banner */
+    #status-banner {
+      border-radius:14px;
+      padding:14px 18px;
+      margin-bottom:12px;
+      transition: background 0.4s, border-color 0.4s, box-shadow 0.4s;
+      background:var(--card);
+      border:1px solid var(--border);
+    }
+    #status-banner.good {
+      background: rgba(0,255,136,0.06);
+      border-color: rgba(0,255,136,0.25);
+      box-shadow: 0 0 20px rgba(0,255,136,0.08);
+    }
+    #status-banner.bad {
+      background: rgba(255,51,85,0.06);
+      border-color: rgba(255,51,85,0.25);
+      box-shadow: 0 0 20px rgba(255,51,85,0.08);
+    }
+    #status-banner.warn {
+      background: rgba(255,204,0,0.06);
+      border-color: rgba(255,204,0,0.25);
+    }
+    #status-label {
+      font-family:'Barlow Condensed';
+      font-size:11px; letter-spacing:3px; text-transform:uppercase;
+      color:var(--muted); margin-bottom:4px;
+    }
+    #status-text {
+      font-family:'Barlow Condensed';
+      font-size:20px; font-weight:700; line-height:1.2;
+      letter-spacing:0.3px;
+      color:var(--text);
+      min-height:24px;
+    }
+    #status-text.good { color:var(--green); }
+    #status-text.bad  { color:var(--red); }
+    #status-text.warn { color:var(--yellow); }
+
+    /* Metric chips */
+    #metrics-row {
+      display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;
+    }
+    .metric-chip {
+      flex:1; min-width:60px;
+      background:var(--card); border:1px solid var(--border);
+      border-radius:10px; padding:8px 10px;
+      text-align:center;
+    }
+    .metric-chip .mc-label {
+      font-family:'Barlow Condensed';
+      font-size:9px; letter-spacing:2px; text-transform:uppercase;
+      color:var(--muted); margin-bottom:2px;
+    }
+    .metric-chip .mc-val {
+      font-size:14px; font-weight:700;
+      color:var(--text);
+    }
+    .metric-chip.ok .mc-val  { color:var(--green); }
+    .metric-chip.bad .mc-val { color:var(--red); }
+    .metric-chip.warn .mc-val{ color:var(--yellow); }
+
+    /* Controls row */
+    #controls {
+      display:flex; gap:8px; align-items:center;
+    }
+    .ctrl-btn {
+      flex:1;
+      background:var(--card); border:1px solid var(--border);
+      border-radius:12px; padding:10px 6px;
+      font-family:'Bebas Neue'; font-size:16px; letter-spacing:2px;
+      color:var(--muted); cursor:pointer;
+      transition:all 0.15s;
+      text-align:center;
+    }
+    .ctrl-btn.active {
+      border-color:var(--green);
+      color:var(--green);
+      background: rgba(0,255,136,0.07);
+    }
+    .ctrl-btn:active { transform:scale(0.96); }
+    .ctrl-btn.red { border-color:var(--red); color:var(--red); background:rgba(255,51,85,0.07); }
+    .ctrl-btn.blue-col { border-color:var(--blue); color:var(--blue); background:rgba(0,187,255,0.07); }
+
+    /* Sensitivity label */
+    #sens-label {
+      font-family:'Barlow Condensed';
+      font-size:10px; letter-spacing:2px; text-transform:uppercase;
+      color:var(--muted); text-align:center; margin-bottom:6px;
+    }
+
+    /* Issue indicators */
+    #issue-dots {
+      display:flex; gap:6px; justify-content:center;
+      margin-bottom:8px;
+    }
+    .i-dot {
+      width:8px; height:8px; border-radius:50%;
+      background:var(--muted);
+      transition:background 0.3s, box-shadow 0.3s;
+    }
+    .i-dot.active {
+      background:var(--red);
+      box-shadow: 0 0 8px var(--red);
+    }
+    .i-dot.good {
+      background:var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    /* No-pose overlay */
+    #no-pose-msg {
+      position:absolute; top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      z-index:7;
+      text-align:center;
+      pointer-events:none;
+      opacity:0;
+      transition:opacity 0.3s;
+    }
+    #no-pose-msg.visible { opacity:1; }
+    #no-pose-msg .np-icon { font-size:36px; margin-bottom:8px; }
+    #no-pose-msg .np-text {
+      font-family:'Barlow Condensed';
+      font-size:14px; letter-spacing:2px; text-transform:uppercase;
+      color:rgba(255,255,255,0.5);
+    }
+
+    /* Camera switch button */
+    #cam-switch {
+      position:absolute; top:60px; right:16px; z-index:10;
+      width:42px; height:42px; border-radius:50%;
+      background:rgba(13,18,25,0.8); border:1px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; font-size:18px;
+      transition:all 0.15s;
+    }
+    #cam-switch:active { transform:scale(0.9); }
+
+    /* Pause overlay */
+    #pause-overlay {
+      position:absolute; inset:0; z-index:8;
+      background:rgba(7,10,15,0.85);
+      display:none; align-items:center; justify-content:center;
+      flex-direction:column; gap:12px;
+    }
+    #pause-overlay.visible { display:flex; }
+    .pause-icon {
+      font-size:48px; color:var(--green);
+      text-shadow: 0 0 20px var(--green);
+    }
+    .pause-text {
+      font-family:'Bebas Neue'; font-size:28px; letter-spacing:4px;
+      color:var(--green);
+    }
+
+    /* Session end modal */
+    #session-modal {
+      position:fixed; inset:0; z-index:200;
+      background:rgba(7,10,15,0.92);
+      display:none; align-items:center; justify-content:center;
+      padding:24px;
+    }
+    #session-modal.visible { display:flex; }
+    .modal-card {
+      background:var(--card); border:1px solid var(--border);
+      border-radius:20px; padding:28px 24px;
+      width:100%;
+    }
+    .modal-title {
+      font-family:'Bebas Neue'; font-size:36px; letter-spacing:4px;
+      color:var(--green); text-align:center;
+      text-shadow: 0 0 20px var(--green);
+      margin-bottom:24px;
+    }
+    .stat-row {
+      display:flex; justify-content:space-between; align-items:center;
+      border-bottom:1px solid var(--border);
+      padding:12px 0;
+    }
+    .stat-row:last-of-type { border-bottom:none; margin-bottom:20px; }
+    .stat-name {
+      font-family:'Barlow Condensed'; font-size:13px; letter-spacing:2px;
+      text-transform:uppercase; color:var(--muted);
+    }
+    .stat-val {
+      font-family:'JetBrains Mono'; font-size:18px; font-weight:700;
+      color:var(--text);
+    }
+    .stat-val.green { color:var(--green); }
+    .modal-btns { display:flex; gap:10px; }
+    .modal-btn {
+      flex:1; padding:14px;
+      border-radius:12px; border:none; cursor:pointer;
+      font-family:'Bebas Neue'; font-size:20px; letter-spacing:3px;
+      transition:transform 0.1s;
+    }
+    .modal-btn:active { transform:scale(0.97); }
+    .modal-btn.primary { background:var(--green); color:#000; }
+    .modal-btn.secondary {
+      background:var(--card); color:var(--text);
+      border:1px solid var(--border);
+    }
+
+    /* Error toast */
+    #err-toast {
+      position:fixed; bottom:32px; left:50%; transform:translateX(-50%);
+      background:rgba(255,51,85,0.9); color:#fff;
+      border-radius:10px; padding:10px 18px;
+      font-family:'Barlow Condensed'; font-size:14px; letter-spacing:1px;
+      z-index:300; display:none;
+      max-width:90%; text-align:center;
+    }
+
+    /* Voice toggle */
+    #voice-toggle {
+      position:absolute; top:60px; left:16px; z-index:10;
+      width:42px; height:42px; border-radius:50%;
+      background:rgba(13,18,25,0.8); border:1px solid var(--border);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; font-size:18px;
+      transition:all 0.15s;
+    }
+    #voice-toggle.muted { opacity:0.4; }
+    #voice-toggle:active { transform:scale(0.9); }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     PERMISSION SCREEN
+══════════════════════════════════ -->
+<div id="perm-screen">
+  <div class="logo">PlankCoach</div>
+  <div class="tagline">AI Posture Trainer</div>
+
+  <div class="perm-card">
+    <h3>Permissions Required</h3>
+    <div class="perm-row">
+      <div class="perm-icon">📷</div>
+      <div class="perm-text">
+        <strong>Camera</strong> — used to detect your body landmarks in real time. Video stays on your device and is never uploaded.
+      </div>
+    </div>
+    <div class="perm-row">
+      <div class="perm-icon">🔊</div>
+      <div class="perm-text">
+        <strong>Audio / Speech</strong> — the app speaks corrections and encouragement aloud so you can focus on the exercise.
+      </div>
+    </div>
+  </div>
+
+  <div class="tip-card">
+    <h3>⚡ Camera Placement</h3>
+    <div class="tip-diagram">
+  <span>[Phone]</span> ──────────────────────►<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;HEAD ── SHOULDER ── HIP ── ANKLE
+    </div>
+    <div class="perm-text" style="margin-top:10px;">
+      Place your phone <strong>to your side at torso height</strong>, landscape if possible, so your full body is visible sideways in frame.
+    </div>
+  </div>
+
+  <button class="start-btn" id="start-btn" onclick="requestPermissions()">
+    GRANT PERMISSIONS &amp; START
+  </button>
+</div>
+
+<!-- ══════════════════════════════════
+     LOADING SCREEN
+══════════════════════════════════ -->
+<div id="load-screen">
+  <div class="load-logo">PlankCoach</div>
+  <div class="load-bar-track">
+    <div class="load-bar-fill" id="load-bar"></div>
+  </div>
+  <div class="load-text" id="load-text">Initialising camera…</div>
+</div>
+
+<!-- ══════════════════════════════════
+     MAIN APP
+══════════════════════════════════ -->
+<div id="app">
+  <!-- Header -->
+  <div id="header">
+    <div class="hdr-logo">PLANK</div>
+    <div class="hdr-timer" id="timer">0:00</div>
+    <div class="hdr-score">
+      <div>✓ <span id="compliment-count">0</span> great</div>
+      <div>✗ <span id="correction-count">0</span> fixes</div>
+    </div>
+  </div>
+
+  <!-- Camera -->
+  <div id="cam-wrap">
+    <video id="video" playsinline autoplay muted></video>
+    <canvas id="overlay"></canvas>
+
+    <div id="reticle"></div>
+
+    <div id="no-pose-msg">
+      <div class="np-icon">🧍</div>
+      <div class="np-text">Position yourself sideways<br>in frame</div>
+    </div>
+
+    <div id="pause-overlay">
+      <div class="pause-icon">⏸</div>
+      <div class="pause-text">PAUSED</div>
+    </div>
+  </div>
+
+  <!-- Controls above camera -->
+  <div id="voice-toggle" onclick="toggleVoice()">🔊</div>
+  <div id="cam-switch" onclick="switchCamera()">🔄</div>
+
+  <!-- Bottom Panel -->
+  <div id="bottom">
+    <div id="issue-dots">
+      <div class="i-dot" id="dot-hip-high"  title="Hips too high"></div>
+      <div class="i-dot" id="dot-hip-low"   title="Hips sagging"></div>
+      <div class="i-dot" id="dot-head-up"   title="Head up"></div>
+      <div class="i-dot" id="dot-head-down" title="Head down"></div>
+      <div class="i-dot" id="dot-plank"     title="Not in plank"></div>
+    </div>
+
+    <div id="status-banner">
+      <div id="status-label">STATUS</div>
+      <div id="status-text">Waiting for pose…</div>
+    </div>
+
+    <div id="metrics-row">
+      <div class="metric-chip" id="chip-hip">
+        <div class="mc-label">HIP</div>
+        <div class="mc-val" id="val-hip">--</div>
+      </div>
+      <div class="metric-chip" id="chip-head">
+        <div class="mc-label">HEAD</div>
+        <div class="mc-val" id="val-head">--</div>
+      </div>
+      <div class="metric-chip" id="chip-angle">
+        <div class="mc-label">ANGLE</div>
+        <div class="mc-val" id="val-angle">--</div>
+      </div>
+      <div class="metric-chip" id="chip-body">
+        <div class="mc-label">POSE</div>
+        <div class="mc-val" id="val-body">--</div>
+      </div>
+    </div>
+
+    <div id="sens-label">SENSITIVITY</div>
+    <div id="controls">
+      <div class="ctrl-btn" id="sens-low"    onclick="setSensitivity('low')">LOW</div>
+      <div class="ctrl-btn active" id="sens-med" onclick="setSensitivity('medium')">MED</div>
+      <div class="ctrl-btn" id="sens-high"   onclick="setSensitivity('high')">HIGH</div>
+      <div class="ctrl-btn blue-col" id="pause-btn" onclick="togglePause()">PAUSE</div>
+      <div class="ctrl-btn red" onclick="endSession()">END</div>
+    </div>
+  </div>
+</div>
+
+<!-- Session end modal -->
+<div id="session-modal">
+  <div class="modal-card">
+    <div class="modal-title">SESSION DONE</div>
+    <div class="stat-row">
+      <div class="stat-name">Duration</div>
+      <div class="stat-val green" id="s-duration">0:00</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-name">Sensitivity</div>
+      <div class="stat-val" id="s-sens">Medium</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-name">Total Corrections</div>
+      <div class="stat-val" id="s-corrections">0</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-name">Good Form Moments</div>
+      <div class="stat-val green" id="s-compliments">0</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-name">Hip Issues</div>
+      <div class="stat-val" id="s-hip">0</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-name">Head Issues</div>
+      <div class="stat-val" id="s-head">0</div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="restartSession()">AGAIN</button>
+      <button class="modal-btn secondary" onclick="closeModal()">CLOSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- Error toast -->
+<div id="err-toast"></div>
+
+<!-- MediaPipe Tasks Vision -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.js" crossorigin="anonymous"></script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════════════════════════════
+
+const LANDMARK = {
+  NOSE: 0,
+  LEFT_SHOULDER: 11, RIGHT_SHOULDER: 12,
+  LEFT_HIP: 23,      RIGHT_HIP: 24,
+  LEFT_KNEE: 25,     RIGHT_KNEE: 26,
+  LEFT_ANKLE: 27,    RIGHT_ANKLE: 28,
+  LEFT_ELBOW: 13,    RIGHT_ELBOW: 14,
+  LEFT_WRIST: 15,    RIGHT_WRIST: 16,
+};
+
+const SENSITIVITY_PRESETS = {
+  low:    { hipThresh: 0.04,  headUpThresh: 0.05,  headDownThresh: 0.18, consFrames: 12, cooldown: 6000 },
+  medium: { hipThresh: 0.025, headUpThresh: 0.035, headDownThresh: 0.14, consFrames: 8,  cooldown: 4000 },
+  high:   { hipThresh: 0.015, headUpThresh: 0.02,  headDownThresh: 0.10, consFrames: 4,  cooldown: 2500 },
+};
+
+const PLANK_BODY_ANGLE_THRESHOLD = 30;
+const MIN_BODY_LENGTH = 0.25; // normalised, ~25% of frame
+
+const ISSUE_MESSAGES = {
+  hip_high: [
+    "Bring those hips down — your core should be tight.",
+    "Pike detected. Lower your hips to form a straight line.",
+    "Hips too high — squeeze your glutes and lower them.",
+  ],
+  hip_low: [
+    "Hips sagging — engage your core and lift them up.",
+    "Tighten your abs and raise those hips.",
+    "Your hips are dropping. Squeeze everything tight.",
+  ],
+  head_up: [
+    "Lower your head — keep your neck neutral.",
+    "Chin down. Your spine should be straight.",
+    "Relax your neck and look at the floor.",
+  ],
+  head_down: [
+    "Lift your head slightly — keep your neck in line.",
+    "Don't let your head drop too far. Stay neutral.",
+  ],
+  not_in_plank: [
+    "Get into plank position — body parallel to the ground.",
+    "Hold a flat plank and stay still for analysis.",
+    "Align your body horizontally to begin.",
+  ],
+  good_form: [
+    "Great form! Keep it up.",
+    "Perfect plank — stay strong.",
+    "Looking solid! Hold that line.",
+    "Excellent form. Stay tight.",
+  ],
+};
+
+const SKELETON_CONNECTIONS = [
+  [11,12],[11,13],[13,15],[12,14],[14,16],
+  [11,23],[12,24],[23,24],[23,25],[24,26],[25,27],[26,28],
+];
+
+// ══════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════
+
+let poseLandmarker = null;
+let stream         = null;
+let animFrame      = null;
+let currentCamera  = 'environment';
+let paused         = false;
+let voiceEnabled   = true;
+let sensitivity    = 'medium';
+
+let msgIdx = {};
+Object.keys(ISSUE_MESSAGES).forEach(k => msgIdx[k] = 0);
+
+// Consecutive-frame counters
+let badFrameCounts = { hip_high:0, hip_low:0, head_up:0, head_down:0, not_in_plank:0 };
+let goodFrameCount = 0;
+
+// Voice cooldowns (last spoken timestamp per key)
+let lastSpoken = {};
+
+// Session stats
+let sessionStart    = null;
+let sessionPaused   = 0;
+let pauseStart      = null;
+let totalCorrections = 0;
+let totalCompliments = 0;
+let corrByType       = { hip_high:0, hip_low:0, head_up:0, head_down:0 };
+let timerInterval    = null;
+
+// ══════════════════════════════════════════════════════════════
+//  GEOMETRY (ported from posture_analyzer.py)
+// ══════════════════════════════════════════════════════════════
+
+function midpoint(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function bodyAngleDeg(shoulder, ankle) {
+  const dx = ankle.x - shoulder.x;
+  const dy = ankle.y - shoulder.y;
+  return Math.abs(Math.atan2(Math.abs(dy), Math.abs(dx) + 1e-8) * 180 / Math.PI);
+}
+
+function signedHipDeviation(shoulder, hip, ankle) {
+  const sx = shoulder.x, sy = shoulder.y;
+  const hx = hip.x, hy = hip.y;
+  const ax = ankle.x, ay = ankle.y;
+  const bodyLen = Math.hypot(ax - sx, ay - sy);
+  if (bodyLen < 1e-4) return 0;
+  const cross = (ax - sx) * (hy - sy) - (ay - sy) * (hx - sx);
+  let sd = cross / bodyLen;
+  if (shoulder.x > ankle.x) sd = -sd;
+  return sd;
+}
+
+function headRise(nose, shoulder, bodyLen) {
+  if (bodyLen < 1e-4) return 0;
+  return (shoulder.y - nose.y) / bodyLen;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  POSTURE ANALYSIS
+// ══════════════════════════════════════════════════════════════
+
+function analyzeFrame(landmarks) {
+  const lm = landmarks;
+  const preset = SENSITIVITY_PRESETS[sensitivity];
+
+  const shoulder = midpoint(lm[LANDMARK.LEFT_SHOULDER], lm[LANDMARK.RIGHT_SHOULDER]);
+  const hip      = midpoint(lm[LANDMARK.LEFT_HIP],      lm[LANDMARK.RIGHT_HIP]);
+  const ankle    = midpoint(lm[LANDMARK.LEFT_ANKLE],    lm[LANDMARK.RIGHT_ANKLE]);
+  const nose     = lm[LANDMARK.NOSE];
+
+  const bodyLen   = Math.hypot(ankle.x - shoulder.x, ankle.y - shoulder.y);
+  const bodyAngle = bodyAngleDeg(shoulder, ankle);
+  const inPlank   = bodyAngle < PLANK_BODY_ANGLE_THRESHOLD && bodyLen > MIN_BODY_LENGTH;
+
+  const metrics = { shoulder, hip, ankle, nose, bodyLen, bodyAngle, inPlank };
+
+  const issues = {};
+
+  if (!inPlank) {
+    issues.not_in_plank = true;
+    metrics.hipDeviation = null;
+    metrics.headRiseVal  = null;
+  } else {
+    const hipDev = signedHipDeviation(shoulder, hip, ankle);
+    const headR  = headRise(nose, shoulder, bodyLen);
+    metrics.hipDeviation = hipDev;
+    metrics.headRiseVal  = headR;
+
+    const t = preset.hipThresh;
+    if (hipDev < -t) issues.hip_high = true;
+    else if (hipDev > t) issues.hip_low = true;
+
+    const upThr   = preset.headUpThresh;
+    const downThr = preset.headDownThresh;
+    if (headR > upThr) issues.head_up = true;
+    else if (headR < -downThr) issues.head_down = true;
+  }
+
+  return { issues, metrics };
+}
+
+// ══════════════════════════════════════════════════════════════
+//  VOICE COACH
+// ══════════════════════════════════════════════════════════════
+
+function speak(text) {
+  if (!voiceEnabled) return;
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate = 0.95;
+  utt.pitch = 1.0;
+  utt.volume = 1.0;
+  window.speechSynthesis.speak(utt);
+}
+
+function nextMessage(key) {
+  const msgs = ISSUE_MESSAGES[key];
+  const idx = msgIdx[key] % msgs.length;
+  msgIdx[key]++;
+  return msgs[idx];
+}
+
+function maybeSpeak(key) {
+  const preset = SENSITIVITY_PRESETS[sensitivity];
+  const now = Date.now();
+  const last = lastSpoken[key] || 0;
+  if (now - last > preset.cooldown) {
+    const msg = nextMessage(key);
+    speak(msg);
+    lastSpoken[key] = now;
+    return msg;
+  }
+  return null;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  UI UPDATES
+// ══════════════════════════════════════════════════════════════
+
+const $statusBanner = document.getElementById('status-banner');
+const $statusText   = document.getElementById('status-text');
+const $statusLabel  = document.getElementById('status-label');
+const $noPoseMsg    = document.getElementById('no-pose-msg');
+const $timerEl      = document.getElementById('timer');
+const $complCount   = document.getElementById('compliment-count');
+const $corrCount    = document.getElementById('correction-count');
+
+const dots = {
+  hip_high:  document.getElementById('dot-hip-high'),
+  hip_low:   document.getElementById('dot-hip-low'),
+  head_up:   document.getElementById('dot-head-up'),
+  head_down: document.getElementById('dot-head-down'),
+  not_in_plank: document.getElementById('dot-plank'),
+};
+
+function setStatus(msg, type) {
+  $statusText.textContent = msg;
+  $statusText.className = type;
+  $statusBanner.className = type === 'good' ? 'good' : type === 'bad' ? 'bad' : 'warn';
+}
+
+function setMetrics(metrics) {
+  const hipEl   = document.getElementById('val-hip');
+  const headEl  = document.getElementById('val-head');
+  const angleEl = document.getElementById('val-angle');
+  const bodyEl  = document.getElementById('val-body');
+
+  const chipHip   = document.getElementById('chip-hip');
+  const chipHead  = document.getElementById('chip-head');
+  const chipAngle = document.getElementById('chip-angle');
+  const chipBody  = document.getElementById('chip-body');
+
+  if (metrics.hipDeviation !== null && metrics.hipDeviation !== undefined) {
+    const hd = metrics.hipDeviation;
+    hipEl.textContent = (hd >= 0 ? '▼' : '▲') + Math.abs(hd * 100).toFixed(1) + '%';
+    const preset = SENSITIVITY_PRESETS[sensitivity];
+    chipHip.className = 'metric-chip ' + (Math.abs(hd) > preset.hipThresh ? 'bad' : 'ok');
+  } else {
+    hipEl.textContent = '--';
+    chipHip.className = 'metric-chip';
+  }
+
+  if (metrics.headRiseVal !== null && metrics.headRiseVal !== undefined) {
+    const hr = metrics.headRiseVal;
+    headEl.textContent = (hr >= 0 ? '▲' : '▼') + Math.abs(hr * 100).toFixed(1) + '%';
+    const preset = SENSITIVITY_PRESETS[sensitivity];
+    const bad = (hr > preset.headUpThresh) || (hr < -preset.headDownThresh);
+    chipHead.className = 'metric-chip ' + (bad ? 'bad' : 'ok');
+  } else {
+    headEl.textContent = '--';
+    chipHead.className = 'metric-chip';
+  }
+
+  if (metrics.bodyAngle !== undefined) {
+    angleEl.textContent = metrics.bodyAngle.toFixed(0) + '°';
+    chipAngle.className = 'metric-chip ' + (metrics.bodyAngle < PLANK_BODY_ANGLE_THRESHOLD ? 'ok' : 'bad');
+  }
+
+  bodyEl.textContent  = metrics.inPlank ? 'PLANK' : 'WAIT';
+  chipBody.className  = 'metric-chip ' + (metrics.inPlank ? 'ok' : 'warn');
+}
+
+function updateDots(activeIssues) {
+  const allKeys = Object.keys(dots);
+  const goodKeys = Object.keys(activeIssues).filter(k => activeIssues[k]);
+  allKeys.forEach(k => {
+    if (activeIssues[k]) {
+      dots[k].className = k === 'not_in_plank' ? 'i-dot warn' : 'i-dot active';
+    } else {
+      dots[k].className = 'i-dot';
+    }
+  });
+}
+
+function updateTimer() {
+  if (!sessionStart) return;
+  const now    = Date.now();
+  const paused_ms = sessionPaused + (paused && pauseStart ? now - pauseStart : 0);
+  const elapsed   = Math.floor((now - sessionStart - paused_ms) / 1000);
+  const m = Math.floor(elapsed / 60);
+  const s = elapsed % 60;
+  $timerEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  $timerEl.className   = 'hdr-timer' + (elapsed > 0 ? ' active' : '');
+}
+
+function formatTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function showError(msg) {
+  const toast = document.getElementById('err-toast');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => toast.style.display = 'none', 4000);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SKELETON DRAWING
+// ══════════════════════════════════════════════════════════════
+
+function drawSkeleton(canvas, video, landmarks, issues) {
+  const ctx = canvas.getContext('2d');
+  canvas.width  = video.videoWidth  || canvas.offsetWidth;
+  canvas.height = video.videoHeight || canvas.offsetHeight;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const hasIssues = Object.values(issues).some(v => v);
+  const mainColor = hasIssues ? '#ff3355' : '#00ff88';
+  const glowColor = hasIssues ? 'rgba(255,51,85,0.4)' : 'rgba(0,255,136,0.4)';
+
+  // Draw connections
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = mainColor;
+  ctx.shadowColor = glowColor;
+  ctx.shadowBlur  = 8;
+
+  SKELETON_CONNECTIONS.forEach(([a, b]) => {
+    const la = landmarks[a], lb = landmarks[b];
+    if (!la || !lb) return;
+    ctx.beginPath();
+    ctx.moveTo(la.x * w, la.y * h);
+    ctx.lineTo(lb.x * w, lb.y * h);
+    ctx.stroke();
+  });
+
+  // Draw joints
+  ctx.shadowBlur = 12;
+  [0,11,12,23,24,27,28,13,14,15,16].forEach(idx => {
+    const lm = landmarks[idx];
+    if (!lm) return;
+    ctx.beginPath();
+    ctx.arc(lm.x * w, lm.y * h, idx === 0 ? 5 : 4, 0, Math.PI * 2);
+    ctx.fillStyle = mainColor;
+    ctx.shadowColor = glowColor;
+    ctx.fill();
+  });
+
+  ctx.shadowBlur = 0;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MAIN LOOP
+// ══════════════════════════════════════════════════════════════
+
+let lastVideoTime = -1;
+let noDetectCount = 0;
+const NO_DETECT_THRESHOLD = 20;
+
+function renderLoop() {
+  animFrame = requestAnimationFrame(renderLoop);
+  if (paused) return;
+
+  const video  = document.getElementById('video');
+  const canvas = document.getElementById('overlay');
+
+  if (!poseLandmarker || !video || video.readyState < 2) return;
+
+  if (video.currentTime === lastVideoTime) return;
+  lastVideoTime = video.currentTime;
+
+  let results;
+  try {
+    results = poseLandmarker.detectForVideo(video, performance.now());
+  } catch(e) {
+    return;
+  }
+
+  if (!results.landmarks || results.landmarks.length === 0) {
+    noDetectCount++;
+    if (noDetectCount > NO_DETECT_THRESHOLD) {
+      $noPoseMsg.classList.add('visible');
+      document.getElementById('reticle').style.opacity = '0.3';
+      setStatus('No pose detected', 'warn');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      Object.keys(badFrameCounts).forEach(k => badFrameCounts[k] = 0);
+      goodFrameCount = 0;
+      setMetrics({ hipDeviation: null, headRiseVal: null, bodyAngle: 0, inPlank: false });
+      updateDots({});
+    }
+    return;
+  }
+
+  noDetectCount = 0;
+  $noPoseMsg.classList.remove('visible');
+  document.getElementById('reticle').style.opacity = '0';
+
+  const landmarks = results.landmarks[0];
+  const { issues, metrics } = analyzeFrame(landmarks);
+  const preset = SENSITIVITY_PRESETS[sensitivity];
+
+  // Increment bad frame counters
+  const issueKeys = ['hip_high','hip_low','head_up','head_down','not_in_plank'];
+  issueKeys.forEach(k => {
+    if (issues[k]) {
+      badFrameCounts[k]++;
+      goodFrameCount = 0;
+    } else {
+      badFrameCounts[k] = Math.max(0, badFrameCounts[k] - 1);
+    }
+  });
+  if (Object.values(issues).every(v => !v)) {
+    goodFrameCount++;
+  }
+
+  // Determine what to speak/show
+  const triggeredIssues = {};
+  issueKeys.forEach(k => {
+    triggeredIssues[k] = badFrameCounts[k] >= preset.consFrames;
+  });
+
+  // Find the most severe triggered issue
+  let primaryIssue = null;
+  let latestMsg = null;
+
+  if (triggeredIssues.not_in_plank) {
+    primaryIssue = 'not_in_plank';
+    latestMsg = maybeSpeak('not_in_plank');
+  } else {
+    // Pick first triggered issue
+    ['hip_high','hip_low','head_up','head_down'].forEach(k => {
+      if (triggeredIssues[k] && !primaryIssue) {
+        primaryIssue = k;
+        latestMsg = maybeSpeak(k);
+        if (latestMsg) {
+          if (k !== 'not_in_plank') {
+            totalCorrections++;
+            if (corrByType[k] !== undefined) corrByType[k]++;
+            $corrCount.textContent = totalCorrections;
+          }
+        }
+      }
+    });
+  }
+
+  // Good form
+  const GOOD_THRESHOLD = preset.consFrames * 5;
+  if (!primaryIssue && goodFrameCount > 0 && goodFrameCount % GOOD_THRESHOLD === 0) {
+    const msg = maybeSpeak('good_form');
+    if (msg) {
+      totalCompliments++;
+      $complCount.textContent = totalCompliments;
+      latestMsg = msg;
+    }
+  }
+
+  // Status display
+  if (triggeredIssues.not_in_plank) {
+    const lastMsg = ISSUE_MESSAGES.not_in_plank[msgIdx.not_in_plank % ISSUE_MESSAGES.not_in_plank.length];
+    setStatus('Not in plank position', 'warn');
+  } else if (primaryIssue) {
+    const labels = {
+      hip_high: '▲ Hips too high — bring them down',
+      hip_low:  '▼ Hips sagging — lift your core',
+      head_up:  '↑ Head up — lower your neck',
+      head_down:'↓ Head down — stay neutral',
+    };
+    setStatus(labels[primaryIssue] || primaryIssue, 'bad');
+  } else if (metrics.inPlank) {
+    setStatus('✓ Good form — stay strong', 'good');
+  } else {
+    setStatus('Position yourself for analysis', 'warn');
+  }
+
+  setMetrics(metrics);
+  updateDots(triggeredIssues);
+  drawSkeleton(canvas, video, landmarks, triggeredIssues);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MEDIAPIPE SETUP
+// ══════════════════════════════════════════════════════════════
+
+async function initMediaPipe() {
+  setLoadProgress(40, 'Loading pose model…');
+  try {
+    const { PoseLandmarker, FilesetResolver } = globalThis;
+
+    const vision = await FilesetResolver.forVisionTasks(
+      'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+    );
+    setLoadProgress(70, 'Initialising detector…');
+
+    poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+        delegate: 'GPU',
+      },
+      runningMode: 'VIDEO',
+      numPoses: 1,
+    });
+
+    setLoadProgress(100, 'Ready!');
+    setTimeout(() => showApp(), 600);
+  } catch (err) {
+    console.error('MediaPipe init failed:', err);
+    // Fallback: try CPU
+    try {
+      const { PoseLandmarker, FilesetResolver } = globalThis;
+      const vision = await FilesetResolver.forVisionTasks(
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm'
+      );
+      poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+          delegate: 'CPU',
+        },
+        runningMode: 'VIDEO',
+        numPoses: 1,
+      });
+      setLoadProgress(100, 'Ready!');
+      setTimeout(() => showApp(), 600);
+    } catch (err2) {
+      showError('Failed to load pose model. Please refresh.');
+      document.getElementById('load-text').textContent = 'Load failed — please refresh';
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CAMERA
+// ══════════════════════════════════════════════════════════════
+
+async function startCamera(facingMode = 'environment') {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+  }
+  const constraints = {
+    video: {
+      facingMode,
+      width:  { ideal: 1280 },
+      height: { ideal: 720 },
+    },
+    audio: false
+  };
+  try {
+    stream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = document.getElementById('video');
+    video.srcObject = stream;
+    video.className = facingMode === 'environment' ? 'rear' : '';
+    await video.play();
+    currentCamera = facingMode;
+  } catch (err) {
+    if (facingMode === 'environment') {
+      // Fallback to any camera
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+        video.className = '';
+        await video.play();
+      } catch (err2) {
+        showError('Camera unavailable: ' + err2.message);
+      }
+    } else {
+      showError('Camera switch failed: ' + err.message);
+    }
+  }
+}
+
+async function switchCamera() {
+  const next = currentCamera === 'environment' ? 'user' : 'environment';
+  await startCamera(next);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  PERMISSIONS FLOW
+// ══════════════════════════════════════════════════════════════
+
+async function requestPermissions() {
+  const btn = document.getElementById('start-btn');
+  btn.textContent = 'REQUESTING…';
+  btn.disabled = true;
+
+  // Camera
+  try {
+    await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+  } catch (err) {
+    btn.textContent = 'CAMERA DENIED — RETRY';
+    btn.disabled = false;
+    showError('Camera permission denied. Please allow access and retry.');
+    return;
+  }
+
+  // Speech synthesis — just trigger it once to unblock on iOS
+  if ('speechSynthesis' in window) {
+    const utt = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(utt);
+  }
+
+  // Show loading
+  document.getElementById('perm-screen').style.display = 'none';
+  const loadScreen = document.getElementById('load-screen');
+  loadScreen.style.display = 'flex';
+
+  setLoadProgress(10, 'Starting camera…');
+  await startCamera('environment');
+  setLoadProgress(25, 'Camera ready…');
+
+  await initMediaPipe();
+}
+
+function setLoadProgress(pct, text) {
+  document.getElementById('load-bar').style.width = pct + '%';
+  document.getElementById('load-text').textContent = text;
+}
+
+function showApp() {
+  document.getElementById('load-screen').style.display = 'none';
+  const app = document.getElementById('app');
+  app.style.display = 'flex';
+  app.style.flexDirection = 'column';
+
+  // Start session
+  sessionStart = Date.now();
+  sessionPaused = 0;
+  timerInterval = setInterval(updateTimer, 500);
+
+  // Start render loop
+  renderLoop();
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CONTROLS
+// ══════════════════════════════════════════════════════════════
+
+function setSensitivity(s) {
+  sensitivity = s;
+  ['low','med','high'].forEach(id => {
+    document.getElementById('sens-' + id).classList.remove('active');
+  });
+  const map = { low:'sens-low', medium:'sens-med', high:'sens-high' };
+  document.getElementById(map[s]).classList.add('active');
+}
+
+function togglePause() {
+  paused = !paused;
+  const btn = document.getElementById('pause-btn');
+  const overlay = document.getElementById('pause-overlay');
+  if (paused) {
+    btn.textContent = 'RESUME';
+    btn.classList.add('active');
+    overlay.classList.add('visible');
+    pauseStart = Date.now();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  } else {
+    btn.textContent = 'PAUSE';
+    btn.classList.remove('active');
+    overlay.classList.remove('visible');
+    if (pauseStart) {
+      sessionPaused += Date.now() - pauseStart;
+      pauseStart = null;
+    }
+  }
+}
+
+function toggleVoice() {
+  voiceEnabled = !voiceEnabled;
+  const btn = document.getElementById('voice-toggle');
+  btn.textContent = voiceEnabled ? '🔊' : '🔇';
+  btn.className = voiceEnabled ? '' : 'muted';
+  if (!voiceEnabled && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+}
+
+function endSession() {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if (animFrame) cancelAnimationFrame(animFrame);
+  clearInterval(timerInterval);
+
+  // Calculate duration
+  const now      = Date.now();
+  const paused_ms = sessionPaused + (paused && pauseStart ? now - pauseStart : 0);
+  const elapsed   = now - sessionStart - paused_ms;
+
+  // Fill modal
+  document.getElementById('s-duration').textContent    = formatTime(elapsed);
+  document.getElementById('s-sens').textContent        = sensitivity.charAt(0).toUpperCase() + sensitivity.slice(1);
+  document.getElementById('s-corrections').textContent = totalCorrections;
+  document.getElementById('s-compliments').textContent = totalCompliments;
+  document.getElementById('s-hip').textContent         = (corrByType.hip_high || 0) + (corrByType.hip_low || 0);
+  document.getElementById('s-head').textContent        = (corrByType.head_up || 0) + (corrByType.head_down || 0);
+
+  document.getElementById('session-modal').classList.add('visible');
+}
+
+function restartSession() {
+  closeModal();
+  // Reset state
+  Object.keys(msgIdx).forEach(k => msgIdx[k] = 0);
+  Object.keys(badFrameCounts).forEach(k => badFrameCounts[k] = 0);
+  Object.keys(lastSpoken).forEach(k => delete lastSpoken[k]);
+  goodFrameCount    = 0;
+  totalCorrections  = 0;
+  totalCompliments  = 0;
+  Object.keys(corrByType).forEach(k => corrByType[k] = 0);
+  $corrCount.textContent    = '0';
+  $complCount.textContent   = '0';
+
+  sessionStart  = Date.now();
+  sessionPaused = 0;
+  pauseStart    = null;
+  paused        = false;
+  document.getElementById('pause-btn').textContent = 'PAUSE';
+  document.getElementById('pause-btn').classList.remove('active');
+  document.getElementById('pause-overlay').classList.remove('visible');
+
+  clearInterval(timerInterval);
+  timerInterval = setInterval(updateTimer, 500);
+  renderLoop();
+}
+
+function closeModal() {
+  document.getElementById('session-modal').classList.remove('visible');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CANVAS RESIZE
+// ══════════════════════════════════════════════════════════════
+
+function resizeCanvas() {
+  const wrap   = document.getElementById('cam-wrap');
+  const canvas = document.getElementById('overlay');
+  canvas.style.width  = wrap.offsetWidth  + 'px';
+  canvas.style.height = wrap.offsetHeight + 'px';
+}
+
+window.addEventListener('resize', resizeCanvas);
+document.addEventListener('DOMContentLoaded', resizeCanvas);
+
+// Keep screen awake (Wake Lock API)
+async function requestWakeLock() {
+  if ('wakeLock' in navigator) {
+    try {
+      await navigator.wakeLock.request('screen');
+    } catch (e) { /* not supported or denied */ }
+  }
+}
+requestWakeLock();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') requestWakeLock();
+});
+</script>
+</body>
+</html>
